@@ -7,11 +7,11 @@ Will be using a FLASK, and our API is Giphy Developers, we will be using SQLite 
 
 Planning:
 Week 1: 
-  -Set up enviornment
+  -Set up environment
   -Blank test website(Are the screens working?)
   -Hard put photos into application
   -Find API and test that calls work
     
-Week 2: 
-Week 3:
-Week 4: 
+Week 2: these 
+Week 3: these
+Week 4: these
