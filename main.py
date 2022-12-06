@@ -7,6 +7,9 @@ import requests
 from streamlit_option_menu import option_menu
 import pkgutil
 from pexels_api import API
+import mysql.connector
+from mysql.connector import Error
+from PIL import Image
 PEXELS_API_KEY = '563492ad6f917000010000011703b7db1b4645e5aa25441ed82ecc70'
 api = API(PEXELS_API_KEY)
 PAGE_LIMIT = 2
@@ -28,6 +31,56 @@ background-color: rgba(0,0,0,0);
 </style>
 """
 
+#Before running must start MySQL Server
+def addLike(id,url):
+    try:
+        #Creates connection with the DB
+        connection = mysql.connector.connect(host='localhost',
+        database='jaars',
+        user='Aalayah',
+        password='password')
+        #If connection is successful, add the id and url into DB
+        if connection.is_connected():
+            cursor = connection.cursor()
+            mySql_insert_query = """INSERT INTO liked (id,url) 
+                                VALUES (%s, %s) """
+            record = (id,url)
+            cursor.execute(mySql_insert_query, record)
+            #Saves changes
+            connection.commit()
+    except Error as e:
+        print("Error while connecting to MySQL", e)
+    finally:
+        #Closes the connection
+        if connection.is_connected():
+            cursor.close()
+            connection.close()
+            print("MySQL connection is closed")
+
+def getLikes():
+    #Creates connection with the DB
+    try:
+        connection = mysql.connector.connect(host='localhost',
+        database='jaars',
+        user='Aalayah',
+        password='password')
+        #If connection is successful, retrieves all records from table liked
+        if connection.is_connected():
+            sql_select_Query = "select * from liked"
+            cursor = connection.cursor()
+            cursor.execute(sql_select_Query)
+            records = cursor.fetchall()
+    except Error as e:
+        print("Error while connecting to MySQL", e)
+    finally:
+        #Closes connection
+        if connection.is_connected():
+            cursor.close()
+            connection.close()
+            print("MySQL connection is closed")
+    #Process list of tuples into a dict for ease of use
+    records = dict(records)
+    return records
 
 #urll = "https://www.pexels.com/search/{}/"
 st.markdown(page_bg_img,unsafe_allow_html=True)
@@ -46,6 +99,12 @@ if selected == "Home":
     st.title(f"{selected}")
 if selected == "Albums":
     st.title(f"{selected}")
+    #Gets all liked images and assigns it to records
+    records = getLikes()
+    #Loops through the dictionary and writes the id and image url for each image
+    for key in records:
+        st.write("ID: ",key)
+        st.image(records[key])
 if selected == "Photos":
     st.title(f"{selected}")
     with st.form(key='searchform'):
@@ -68,7 +127,7 @@ if selected == "Photos":
                     st.write("Photo id: ", photo.id)
                     st.write("Photo width: ", photo.width)
                     st.write("Photo height: ", photo.height)
-                    st.image(photo.url)
+                    st.image(photo.original)
                     st.write("Photographer: ", photo.photographer)
                     st.write("Photo description: ", photo.description)
                     st.write("Photo extension: ", photo.extension)
@@ -82,6 +141,7 @@ if selected == "Photos":
                     st.write("\ttiny: ", photo.tiny)
                     st.write("\tportrait: ", photo.portrait)
                     st.write("\tlandscape: ", photo.landscape)
+                    st.button("\tLike", key=counter,on_click=addLike(photo.id,photo.original))
                     counter += 1
                     if not api.has_next_page:
                         break
