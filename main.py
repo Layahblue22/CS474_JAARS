@@ -13,7 +13,7 @@ from PIL import Image
 PEXELS_API_KEY = '563492ad6f917000010000011703b7db1b4645e5aa25441ed82ecc70'
 api = API(PEXELS_API_KEY)
 PAGE_LIMIT = 2
-RESULTS_PER_PAGE = 2
+RESULTS_PER_PAGE = 1
 page = 1
 counter = 0
 
@@ -82,6 +82,30 @@ def getLikes():
     records = dict(records)
     return records
 
+def deletePhoto(id):
+    #Creates connection with the DB
+    try:
+        connection = mysql.connector.connect(host='localhost',
+        database='jaars',
+        user='Aalayah',
+        password='password')
+        #If connection is successful, retrieves all records from table liked
+        if connection.is_connected():
+            sql_select_Query = "delete from liked where id=%s"
+            id = str(id)
+            cursor = connection.cursor()
+            cursor.execute(sql_select_Query,(id,))
+            #Saves Changes
+            connection.commit()
+    except Error as e:
+        print("Error while connecting to MySQL", e)
+    finally:
+        #Closes connection
+        if connection.is_connected():
+            cursor.close()
+            connection.close()
+            print("MySQL connection is closed")
+
 #urll = "https://www.pexels.com/search/{}/"
 st.markdown(page_bg_img,unsafe_allow_html=True)
 #sidebare
@@ -102,9 +126,12 @@ if selected == "Albums":
     #Gets all liked images and assigns it to records
     records = getLikes()
     #Loops through the dictionary and writes the id and image url for each image
+    count=0
     for key in records:
         st.write("ID: ",key)
         st.image(records[key])
+        st.button("Delete",key=count,on_click=deletePhoto(key))
+        count +=1
 if selected == "Photos":
     st.title(f"{selected}")
     with st.form(key='searchform'):
@@ -128,19 +155,6 @@ if selected == "Photos":
                     st.write("Photo width: ", photo.width)
                     st.write("Photo height: ", photo.height)
                     st.image(photo.original)
-                    st.write("Photographer: ", photo.photographer)
-                    st.write("Photo description: ", photo.description)
-                    st.write("Photo extension: ", photo.extension)
-                    st.write("Photo sizes:")
-                    st.write("\toriginal: ", photo.original)
-                    st.write("\tcompressed: ", photo.compressed)
-                    st.write("\tlarge2x: ", photo.large2x)
-                    st.write("\tlarge: ", photo.large)
-                    st.write("\tmedium: ", photo.medium)
-                    st.write("\tsmall: ", photo.small)
-                    st.write("\ttiny: ", photo.tiny)
-                    st.write("\tportrait: ", photo.portrait)
-                    st.write("\tlandscape: ", photo.landscape)
                     st.button("\tLike", key=counter,on_click=addLike(photo.id,photo.original))
                     counter += 1
                     if not api.has_next_page:
